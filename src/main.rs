@@ -16,16 +16,22 @@ fn main() {
 }
 fn handle_conection(mut stream: TcpStream) {
     let buf_reader = BufReader::new(&stream);
-    let http_request: Vec<_> = buf_reader
+    let request_line = buf_reader
         .lines()
-        .map(|resault| resault.unwrap())
-        .take_while(|line| !line.is_empty())
-        .collect();
+        .next()
+        .unwrap()
+        .unwrap();
+    let (status_line, file_name) = if request_line == "GET / HTTP/1.1" {
+        ("HTTP/1.1 200 OK", "bypassOS.html")
+    }else {
+        ("HTTP/1.1 404 NOT FOUND", "404.html")
+    };
 
-    let contents = fs::read_to_string("bypassOS.html").unwrap();
+    let contents = fs::read_to_string(file_name).unwrap();
 
     let response = format!(
-        "HTTP/1.1/ 200 OK\r\nContent-Length: {}\r\n\r\n {}",
+        "{}\r\nContent-Length: {}\r\n\r\n {}",
+        status_line,
         contents.len(),
         contents
     );
